@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Location Sender</title>
+</head>
+
+<body>
+    <h2>Live GPS Sender</h2>
+    <p id="status">Requesting location permission...</p>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+        // Paste your Firebase config here
+        const firebaseConfig = {
+            apiKey: "AIzaSyBYdy0mGeOSrx59-dDdS9whEpKakuOgSlA",
+            authDomain: "location-detector-25ab7.firebaseapp.com",
+            databaseURL: "https://location-detector-25ab7-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "location-detector-25ab7",
+            storageBucket: "location-detector-25ab7.firebasestorage.app",
+            messagingSenderId: "717756663277",
+            appId: "1:717756663277:web:4913e4e1fd58aa5bb613e4",
+            measurementId: "G-8D3FXK2K3Y"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const statusEl = document.getElementById("status");
+
+        if ("geolocation" in navigator) {
+            navigator.geolocation.watchPosition(
+                (pos) => {
+                    const { latitude, longitude, accuracy } = pos.coords;
+                    set(ref(db, "devices/brother_phone"), {
+                        lat: latitude,
+                        lng: longitude,
+                        accuracy: Math.round(accuracy),
+                        updatedAt: Date.now()
+                    });
+                    statusEl.textContent = `Sending: ${latitude.toFixed(5)}, ${longitude.toFixed(5)} (±${Math.round(accuracy)}m)`;
+                },
+                (err) => {
+                    statusEl.textContent = `Error: ${err.message}`;
+                },
+                { enableHighAccuracy: true, maximumAge: 0 }
+            );
+        } else {
+            statusEl.textContent = "Geolocation is not supported by this browser.";
+        }
+    </script>
+</body>
+
+</html>
